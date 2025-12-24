@@ -6,7 +6,7 @@ describe('Base', async () => {
   const app = new Hono()
   app.use(loggerMiddleware())
 
-  app.get('/test', async c => {
+  app.get('/test', async (c) => {
     c.var.log.info('test log')
     return c.text('ok')
   })
@@ -34,7 +34,7 @@ describe('Custom', async () => {
   })
   app.use(loggerMiddleware)
 
-  app.get('/test', async c => {
+  app.get('/test', async (c) => {
     c.var.log.info('test log')
     return c.text('ok')
   })
@@ -55,7 +55,7 @@ describe('Custom Ip Header', async () => {
   })
   app.use(loggerMiddleware)
 
-  app.get('/test', async c => {
+  app.get('/test', async (c) => {
     c.var.log.info('test log')
     return c.text('ok')
   })

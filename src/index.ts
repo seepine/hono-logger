@@ -4,6 +4,8 @@ import pino from 'pino'
 import PinoPretty, { type PrettyOptions } from 'pino-pretty'
 import crypto from 'crypto'
 
+export type Logger = pino.Logger
+
 export type HonoLoggerOptions = {
   level?: 'error' | 'warn' | 'info' | 'debug' | 'trace'
   /**
@@ -79,7 +81,9 @@ export const formatTime = ([diffSec, diffNs]: number[]) => {
 }
 
 export const logStream = (options?: PrettyOptions) => {
-  const isDev = process.env['NODE_ENV'] !== 'production' && process.env['MODE'] !== 'production'
+  const isDev =
+    process.env['NODE_ENV'] !== 'production' &&
+    process.env['MODE'] !== 'production'
   return PinoPretty({
     colorize: true,
     singleLine: true,
@@ -100,7 +104,10 @@ const buildOpts = (opts?: HonoLoggerOptions) => {
     responseTimeHeaderName: opts?.responseTimeHeaderName ?? 'X-Response-Time',
     generator: opts?.generator ?? (() => crypto.randomUUID()),
     logStream: opts?.stream ?? logStream(opts?.prettyOptions),
-    getIpFromHeaders: opts?.getIpFromHeaders ?? ['X-Real-Ip', 'X-Forwarded-For'],
+    getIpFromHeaders: opts?.getIpFromHeaders ?? [
+      'X-Real-Ip',
+      'X-Forwarded-For',
+    ],
     getIpAddress: opts?.getIpAddress,
   }
 }
@@ -119,6 +126,7 @@ const getIpAddress = (c: Context, opt: HonoLoggerOptions) => {
   }
   return 'unknown'
 }
+
 export const createLoggerMiddleware = (opts?: HonoLoggerOptions) => {
   const opt = buildOpts(opts)
   const log = pino(
@@ -134,7 +142,7 @@ export const createLoggerMiddleware = (opts?: HonoLoggerOptions) => {
       const logger = log.child({ reqId })
       if (opt.requestLogEnable) {
         const ipAddress = getIpAddress(c, opt)
-        logger.info({ ip: ipAddress }, 'request incoming')
+        logger.info({ path: c.req.path, ip: ipAddress }, 'request incoming')
       }
       if (opt.logWithRequestId) {
         c.set('log', logger)
@@ -147,7 +155,10 @@ export const createLoggerMiddleware = (opts?: HonoLoggerOptions) => {
       const diffFormat = formatTime(process.hrtime(start))
       c.res.headers.set(opt.responseTimeHeaderName, `${diffFormat}`)
       if (opt.requestLogEnable) {
-        logger.info({ status: c.res.status, respTime: `${diffFormat}` }, 'complete request')
+        logger.info(
+          { status: c.res.status, respTime: `${diffFormat}` },
+          'complete request',
+        )
       }
     }),
   }
@@ -159,6 +170,6 @@ export const loggerMiddleware = (opts?: Partial<HonoLoggerOptions>) => {
 
 declare module 'hono' {
   interface ContextVariableMap {
-    log: pino.Logger
+    log: Logger
   }
 }
